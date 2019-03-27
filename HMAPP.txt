@@ -1,0 +1,80 @@
+Imports System.Net
+Imports System.IO
+
+Public Class AppInterface
+
+    Dim rec_table As New DataTable
+
+
+
+    Sub initialize()
+        rec_table.Columns.Add("First Name")
+        rec_table.Columns.Add("Last Name")
+        rec_table.Columns.Add("Temperature")
+        rec_table.Columns.Add("Pulse")
+        rec_table.Columns.Add("Blood Pressure")
+        rec_table.Columns.Add("Respiration")
+        rec_table.Columns.Add("Latitude")
+        rec_table.Columns.Add("Longitude")
+    End Sub
+    Private Sub AppInterface_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        initialize()
+
+
+
+        Dim request As HttpWebRequest
+        Dim response As HttpWebResponse = Nothing
+        Dim reader As StreamReader
+
+        request = DirectCast(WebRequest.Create("https://api.thingspeak.com/channels/733323/feeds.json?api_key=A7U345D8V1DG1MAM&results=100"), HttpWebRequest)
+
+        response = DirectCast(request.GetResponse(), HttpWebResponse)
+        reader = New StreamReader(response.GetResponseStream())
+
+        Dim rawresp As String
+        rawresp = reader.ReadToEnd()
+
+        Dim json As JObject
+        json = JObject.Parse(rawresp)
+
+        Dim txt As String()
+        txt = Split(json("feeds").ToString, "{")
+
+        Dim txt2 As String()
+        For i As Integer = 1 To UBound(txt)
+            txt2 = Split(txt(i), "}")
+
+
+
+            Dim data As String
+            data = txt2(0)
+
+            Dim final As String()
+            'MsgBox(txt2(0).Replace("field", "").Replace("" & ControlChars.Quote & "", "").Replace(" ", ""))
+            final = Split(txt2(0).Replace("field", "").Replace("" & ControlChars.Quote & "", "").Replace(" ", ""), vbNewLine)
+
+            rec_table.Rows.Add(final(3).Replace(",", "").Remove(0, 2),
+                               final(4).Replace(",", "").Remove(0, 2),
+                               final(5).Replace(",", "").Remove(0, 2),
+                               final(6).Replace(",", "").Remove(0, 2),
+                               final(7).Replace(",", "").Remove(0, 2),
+                               final(8).Replace(",", "").Remove(0, 2),
+                               final(9).Replace(",", "").Remove(0, 2),
+                               final(10).Replace(",", "").Remove(0, 2))
+
+
+
+
+
+
+
+
+            'TextBox1.Text += "Entry No.:" & i & " " & final(3).Remove(0, 3) + final(4).Remove(0, 3) + final(5).Remove(0, 3) + final(6).Remove(0, 3) + final(7).Remove(0, 3) + final(8).Remove(0, 3) + vbNewLine
+            'TextBox1.Text = TextBox1.Text.Replace("" & ControlChars.Quote & "", "")
+        Next
+        dg_records.DataSource = rec_table
+        dg_records.Update()
+
+
+    End Sub
+End Class

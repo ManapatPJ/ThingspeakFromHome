@@ -1,0 +1,87 @@
+Imports System.Net
+Imports System.IO
+Imports Newtonsoft.Json
+Imports Newtonsoft.Json.Linq
+
+Public Class Form1
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+
+
+    End Sub
+
+    Dim fname As String
+    Dim lname As String
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        If TextBox1.Text <> "" And TextBox2.Text <> "" Then
+
+            fname = TextBox1.Text
+            lname = TextBox2.Text
+            BackgroundWorker1.RunWorkerAsync()
+            Button1.Enabled = False
+        Else
+            MsgBox("Please complete fields.")
+        End If
+
+
+    End Sub
+
+    Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
+
+
+    End Sub
+
+    Function random(upperbound As Integer, lowerbound As Integer) As Double
+        'random = CInt(Math.Floor((lower - (upper * 100) + 1) * Rnd())) + 100
+
+        random = CInt(Math.Floor(((upperbound * 100) - (lowerbound * 100) + 1) * Rnd())) + lowerbound * 100
+        random = random / 100
+    End Function
+
+    Private Sub BackgroundWorker1_DoWork(sender As Object, e As System.ComponentModel.DoWorkEventArgs) Handles BackgroundWorker1.DoWork
+
+        Try
+retryy:
+            If BackgroundWorker1.CancellationPending = True Then
+                Button1.Enabled = True
+                Label3.Text = 0
+                MsgBox("Operation Cancelled.")
+                Exit Sub
+            End If
+            BackgroundWorker1.ReportProgress(10)
+            Dim url As String = "https://api.thingspeak.com/update?api_key=8Y7R8TOMTB93P4CA&field1=" & fname & "&field2=" & lname & "&field3=" & random(60, 30) & "&field4=" & random(1, 100) & "&field5=" & random(1, 100) & "&field6=" & random(1, 100) & "&field7=" & random(14, 15) & "&field8=" & random(121, 122) & ""
+            ' Using WebRequest
+            Dim request As WebRequest = WebRequest.Create(url)
+            Dim response As WebResponse = request.GetResponse()
+            Dim result As String = New StreamReader(response.GetResponseStream()).ReadToEnd()
+            ' Using WebClient
+            Dim result1 As String = New WebClient().DownloadString(url)
+
+            If result = "0" Then
+                GoTo retryy
+            Else
+                MsgBox("Sending Successful.")
+            End If
+
+        Catch ex As Exception
+            MsgBox("Sending Failed. " & ex.ToString)
+        End Try
+
+    End Sub
+
+    Private Sub BackgroundWorker1_RunWorkerCompleted(sender As Object, e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles BackgroundWorker1.RunWorkerCompleted
+        Button1.Enabled = True
+        Label3.Text = 0
+    End Sub
+
+    Private Sub BackgroundWorker1_ProgressChanged(sender As Object, e As System.ComponentModel.ProgressChangedEventArgs) Handles BackgroundWorker1.ProgressChanged
+        Label3.Text = Label3.Text + 1
+        If Label3.Text = "20" Then
+            Button1.Enabled = True
+
+            BackgroundWorker1.CancelAsync()
+
+            Label3.Text = 0
+        End If
+    End Sub
+End Class
